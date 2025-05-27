@@ -241,91 +241,6 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Stats Cards */}
-      <ScrollView
-        ref={scrollViewRef}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        pagingEnabled
-        style={styles.statsContainer}
-        contentContainerStyle={styles.statsContent}
-        scrollEventThrottle={16}
-        onMomentumScrollEnd={(event) => {
-          const offsetX = event.nativeEvent.contentOffset.x;
-          const index = Math.round(offsetX / (width - 40));
-          setCurrentCardIndex(index);
-        }}
-      >
-        {/* Monthly Overview Card */}
-        <View style={[styles.statsCard, { backgroundColor: colors.card }]}>
-          <Text style={[styles.statsTitle, { color: colors.text }]}>{currentMonth} Overview</Text>
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={[styles.statLabel, { color: colors.textLight }]}>This Month</Text>
-              <Text style={[styles.statValue, { color: colors.secondary }]}>
-                {formatCurrency(stats.thisMonth)}
-              </Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={[styles.statLabel, { color: colors.textLight }]}>Last Month</Text>
-              <Text style={[styles.statValue, { color: colors.secondary }]}>
-                {formatCurrency(stats.lastMonth)}
-              </Text>
-            </View>
-          </View>
-          <View style={[styles.monthComparison, { 
-            backgroundColor: stats.thisMonth <= stats.lastMonth ? colors.success : colors.error 
-          }]}>
-            <Text style={styles.comparisonText}>
-              {stats.thisMonth <= stats.lastMonth 
-                ? '🎉 Spending less than last month!'
-                : '⚠️ Spending more than last month'}
-            </Text>
-          </View>
-        </View>
-
-        {/* Total Expenses Card */}
-        <View style={[styles.statsCard, { backgroundColor: colors.card }]}>
-          <Text style={[styles.statsTitle, { color: colors.text }]}>Total Overview</Text>
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={[styles.statLabel, { color: colors.textLight }]}>Total Expenses</Text>
-              <Text style={[styles.statValue, { color: colors.primary }]}>
-                {formatCurrency(stats.totalExpenses)}
-              </Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={[styles.statLabel, { color: colors.textLight }]}>Average</Text>
-              <Text style={[styles.statValue, { color: colors.primary }]}>
-                {formatCurrency(stats.averageExpense)}
-              </Text>
-            </View>
-          </View>
-          <View style={styles.highestExpense}>
-            <Text style={[styles.statLabel, { color: colors.textLight }]}>Highest Expense</Text>
-            <Text style={[styles.highestValue, { color: colors.error }]}>
-              {formatCurrency(stats.highestExpense)}
-            </Text>
-          </View>
-        </View>
-      </ScrollView>
-
-      {/* Pagination Dots */}
-      <View style={styles.paginationDots}>
-        <View style={[
-          styles.dot,
-          currentCardIndex === 0 && styles.activeDot,
-          { backgroundColor: currentCardIndex === 0 ? colors.primary : colors.border }
-        ]} />
-        <View style={[
-          styles.dot,
-          currentCardIndex === 1 && styles.activeDot,
-          { backgroundColor: currentCardIndex === 1 ? colors.primary : colors.border }
-        ]} />
-      </View>
-
       {/* Search Bar */}
       <View style={[styles.searchContainer, { backgroundColor: colors.card }]}>
         <Ionicons name="search" size={20} color={colors.textLight} style={styles.searchIcon} />
@@ -344,6 +259,93 @@ export default function HomeScreen() {
             <Ionicons name="close-circle" size={20} color={colors.textLight} />
           </TouchableOpacity>
         ) : null}
+      </View>
+
+      {/* Stats Cards */}
+      <View style={styles.statsWrapper}>
+        <ScrollView
+          ref={scrollViewRef}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          pagingEnabled
+          style={styles.statsContainer}
+          contentContainerStyle={styles.statsContent}
+          scrollEventThrottle={16}
+          onMomentumScrollEnd={(event) => {
+            const offsetX = event.nativeEvent.contentOffset.x;
+            const index = Math.round(offsetX / (width - 40));
+            setCurrentCardIndex(index);
+          }}
+        >
+          {/* Monthly Overview Card */}
+          <View style={[styles.statsCard, { backgroundColor: colors.card }]}>
+            <Text style={[styles.statsTitle, { color: colors.text }]}>{currentMonth} Overview</Text>
+            <View style={styles.statsRow}>
+              <View style={styles.statItem}>
+                <Text style={[styles.statLabel, { color: colors.textLight }]}>This Month</Text>
+                <Text style={[styles.statValue, { color: colors.secondary }]}>
+                  {formatCurrency(stats.thisMonth)}
+                </Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <Text style={[styles.statLabel, { color: colors.textLight }]}>Last Month</Text>
+                <Text style={[styles.statValue, { color: colors.secondary }]}>
+                  {formatCurrency(stats.lastMonth)}
+                </Text>
+              </View>
+            </View>
+            <View style={[styles.monthComparison, { 
+              backgroundColor: stats.thisMonth <= stats.lastMonth ? colors.success : colors.error 
+            }]}>
+              <Text style={styles.comparisonText}>
+                {stats.thisMonth <= stats.lastMonth 
+                  ? '🎉 Spending less than last month!'
+                  : '⚠️ Spending more than last month'}
+              </Text>
+            </View>
+          </View>
+
+          {/* Total Expenses Card */}
+          <View style={[styles.statsCard, { backgroundColor: colors.card }]}>
+            <Text style={[styles.statsTitle, { color: colors.text }]}>Total Overview</Text>
+            <View style={styles.statsRow}>
+              <View style={styles.statItem}>
+                <Text style={[styles.statLabel, { color: colors.textLight }]}>Total Expenses</Text>
+                <Text style={[styles.statValue, { color: colors.primary }]}>
+                  {formatCurrency(stats.totalExpenses)}
+                </Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <Text style={[styles.statLabel, { color: colors.textLight }]}>Average</Text>
+                <Text style={[styles.statValue, { color: colors.primary }]}>
+                  {formatCurrency(stats.averageExpense)}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.highestExpense}>
+              <Text style={[styles.statLabel, { color: colors.textLight }]}>Highest Expense</Text>
+              <Text style={[styles.highestValue, { color: colors.error }]}>
+                {formatCurrency(stats.highestExpense)}
+              </Text>
+            </View>
+          </View>
+        </ScrollView>
+
+        {/* Pagination Dots */}
+        <View style={styles.paginationDots}>
+          <View style={[
+            styles.dot,
+            currentCardIndex === 0 && styles.activeDot,
+            { backgroundColor: currentCardIndex === 0 ? colors.primary : colors.border }
+          ]} />
+          <View style={[
+            styles.dot,
+            currentCardIndex === 1 && styles.activeDot,
+            { backgroundColor: currentCardIndex === 1 ? colors.primary : colors.border }
+          ]} />
+        </View>
       </View>
 
       {error ? (
@@ -456,11 +458,11 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: 2,
     },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
-    elevation: 8,
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
   },
   welcomeText: {
     fontSize: 16,
@@ -483,8 +485,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginHorizontal: 20,
-    marginTop: 5,
-    marginBottom: 10,
+    marginTop: 15,
+    marginBottom: 15,
     paddingHorizontal: 15,
     height: 45,
     borderRadius: 22,
@@ -496,7 +498,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 3,
-    zIndex: 0,
   },
   searchIcon: {
     marginRight: 10,
@@ -592,21 +593,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+  statsWrapper: {
+    marginBottom: 15,
+  },
   statsContainer: {
-    marginTop: 15,
-    height: 220,
-    marginBottom: 10,
-    zIndex: 1,
+    height: 180,
   },
   statsContent: {
     paddingHorizontal: 20,
-    paddingVertical: 5,
   },
   statsCard: {
     width: width - 40,
+    height: 170,
     marginRight: 20,
     borderRadius: 15,
-    padding: 20,
+    padding: 15,
     backgroundColor: '#fff',
     shadowColor: '#000',
     shadowOffset: {
@@ -616,18 +617,17 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 4,
-    zIndex: 2,
   },
   statsTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 15,
+    marginBottom: 12,
   },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 12,
   },
   statItem: {
     flex: 1,
@@ -641,16 +641,17 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 14,
-    marginBottom: 5,
+    marginBottom: 6,
   },
   statValue: {
     fontSize: 20,
     fontWeight: 'bold',
   },
   monthComparison: {
-    padding: 8,
+    padding: 10,
     borderRadius: 10,
     alignItems: 'center',
+    marginTop: 5,
   },
   comparisonText: {
     color: '#fff',
@@ -673,9 +674,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 5,
-    marginBottom: 15,
-    zIndex: 1,
+    marginTop: 10,
   },
   dot: {
     width: 8,
