@@ -6,7 +6,6 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
-  FlatList,
   Platform,
   ScrollView,
   StatusBar,
@@ -14,7 +13,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 import { Colors } from '../../constants/Colors';
 
@@ -241,7 +240,7 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Search Bar */}
+      {/* Fixed Search Bar */}
       <View style={[styles.searchContainer, { backgroundColor: colors.card }]}>
         <Ionicons name="search" size={20} color={colors.textLight} style={styles.searchIcon} />
         <TextInput
@@ -261,158 +260,170 @@ export default function HomeScreen() {
         ) : null}
       </View>
 
-      {/* Stats Cards */}
-      <View style={styles.statsWrapper}>
-        <ScrollView
-          ref={scrollViewRef}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          pagingEnabled
-          style={styles.statsContainer}
-          contentContainerStyle={styles.statsContent}
-          scrollEventThrottle={16}
-          onMomentumScrollEnd={(event) => {
-            const offsetX = event.nativeEvent.contentOffset.x;
-            const index = Math.round(offsetX / (width - 40));
-            setCurrentCardIndex(index);
-          }}
-        >
-          {/* Monthly Overview Card */}
-          <View style={[styles.statsCard, { backgroundColor: colors.card }]}>
-            <Text style={[styles.statsTitle, { color: colors.text }]}>{currentMonth} Overview</Text>
-            <View style={styles.statsRow}>
-              <View style={styles.statItem}>
-                <Text style={[styles.statLabel, { color: colors.textLight }]}>This Month</Text>
-                <Text style={[styles.statValue, { color: colors.secondary }]}>
-                  {formatCurrency(stats.thisMonth)}
-                </Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <Text style={[styles.statLabel, { color: colors.textLight }]}>Last Month</Text>
-                <Text style={[styles.statValue, { color: colors.secondary }]}>
-                  {formatCurrency(stats.lastMonth)}
-                </Text>
-              </View>
-            </View>
-            <View style={[styles.monthComparison, { 
-              backgroundColor: stats.thisMonth <= stats.lastMonth ? colors.success : colors.error 
-            }]}>
-              <Text style={styles.comparisonText}>
-                {stats.thisMonth <= stats.lastMonth 
-                  ? '🎉 Spending less than last month!'
-                  : '⚠️ Spending more than last month'}
-              </Text>
-            </View>
-          </View>
-
-          {/* Total Expenses Card */}
-          <View style={[styles.statsCard, { backgroundColor: colors.card }]}>
-            <Text style={[styles.statsTitle, { color: colors.text }]}>Total Overview</Text>
-            <View style={styles.statsRow}>
-              <View style={styles.statItem}>
-                <Text style={[styles.statLabel, { color: colors.textLight }]}>Total Expenses</Text>
-                <Text style={[styles.statValue, { color: colors.primary }]}>
-                  {formatCurrency(stats.totalExpenses)}
-                </Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <Text style={[styles.statLabel, { color: colors.textLight }]}>Average</Text>
-                <Text style={[styles.statValue, { color: colors.primary }]}>
-                  {formatCurrency(stats.averageExpense)}
-                </Text>
-              </View>
-            </View>
-            <View style={styles.highestExpense}>
-              <Text style={[styles.statLabel, { color: colors.textLight }]}>Highest Expense</Text>
-              <Text style={[styles.highestValue, { color: colors.error }]}>
-                {formatCurrency(stats.highestExpense)}
-              </Text>
-            </View>
-          </View>
-        </ScrollView>
-
-        {/* Pagination Dots */}
-        <View style={styles.paginationDots}>
-          <View style={[
-            styles.dot,
-            currentCardIndex === 0 && styles.activeDot,
-            { backgroundColor: currentCardIndex === 0 ? colors.primary : colors.border }
-          ]} />
-          <View style={[
-            styles.dot,
-            currentCardIndex === 1 && styles.activeDot,
-            { backgroundColor: currentCardIndex === 1 ? colors.primary : colors.border }
-          ]} />
-        </View>
-      </View>
-
-      {error ? (
-        <View style={styles.errorContainer}>
-          <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
-          <TouchableOpacity
-            style={[styles.retryButton, { backgroundColor: colors.primary }]}
-            onPress={fetchExpenses}
+      {/* Scrollable Content */}
+      <ScrollView 
+        style={styles.mainScroll}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Stats Cards */}
+        <View style={styles.statsWrapper}>
+          <ScrollView
+            ref={scrollViewRef}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            pagingEnabled
+            style={styles.statsContainer}
+            contentContainerStyle={styles.statsContent}
+            scrollEventThrottle={16}
+            onMomentumScrollEnd={(event) => {
+              const offsetX = event.nativeEvent.contentOffset.x;
+              const index = Math.round(offsetX / (width - 40));
+              setCurrentCardIndex(index);
+            }}
+            nestedScrollEnabled={true}
           >
-            <Text style={styles.retryButtonText}>Retry</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <FlatList
-          data={filteredExpenses}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.listContainer}
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={[styles.expenseItem, { backgroundColor: colors.card }]}
-              onPress={() => showExpenseDetails(item)}
-            >
-              <View style={styles.expenseContent}>
-                <View style={styles.expenseHeader}>
-                  <Text style={[styles.expenseTitle, { color: colors.text }]} numberOfLines={1}>
-                    {item.title}
-                  </Text>
-                  <Text style={[styles.expenseAmount, { color: colors.primary }]}>
-                    {formatCurrency(parseFloat(item.amount))}
+            {/* Monthly Overview Card */}
+            <View style={[styles.statsCard, { backgroundColor: colors.card }]}>
+              <Text style={[styles.statsTitle, { color: colors.text }]}>{currentMonth} Overview</Text>
+              <View style={styles.statsRow}>
+                <View style={styles.statItem}>
+                  <Text style={[styles.statLabel, { color: colors.textLight }]}>This Month</Text>
+                  <Text style={[styles.statValue, { color: colors.secondary }]}>
+                    {formatCurrency(stats.thisMonth)}
                   </Text>
                 </View>
-                <Text style={[styles.expenseDescription, { color: colors.textLight }]} numberOfLines={2}>
-                  {item.description || 'No description'}
-                </Text>
-                <View style={[styles.expenseFooter, { borderTopColor: colors.border }]}>
-                  <Text style={[styles.expenseDate, { color: colors.textLight }]}>
-                    {formatDate(item.createdAt)}
+                <View style={styles.statDivider} />
+                <View style={styles.statItem}>
+                  <Text style={[styles.statLabel, { color: colors.textLight }]}>Last Month</Text>
+                  <Text style={[styles.statValue, { color: colors.secondary }]}>
+                    {formatCurrency(stats.lastMonth)}
                   </Text>
-                  <TouchableOpacity
-                    style={styles.deleteButton}
-                    onPress={() => handleDeleteExpense(item.id)}
-                  >
-                    <Ionicons name="trash-outline" size={20} color={colors.error} />
-                  </TouchableOpacity>
                 </View>
               </View>
-            </TouchableOpacity>
-          )}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={[styles.emptyText, { color: colors.textLight }]}>
-                {searchQuery ? 'No matching expenses found' : 'No expenses yet'}
-              </Text>
-              {!searchQuery && (
-                <TouchableOpacity
-                  style={[styles.addFirstButton, { backgroundColor: colors.primary }]}
-                  onPress={() => router.push('/expense-details')}
-                >
-                  <Text style={styles.addFirstButtonText}>Add Your First Expense</Text>
-                </TouchableOpacity>
-              )}
+              <View style={[styles.monthComparison, { 
+                backgroundColor: stats.thisMonth <= stats.lastMonth ? colors.success : colors.error 
+              }]}>
+                <Text style={styles.comparisonText}>
+                  {stats.thisMonth <= stats.lastMonth 
+                    ? '🎉 Spending less than last month!'
+                    : '⚠️ Spending more than last month'}
+                </Text>
+              </View>
             </View>
-          }
-        />
-      )}
+
+            {/* Total Expenses Card */}
+            <View style={[styles.statsCard, { backgroundColor: colors.card }]}>
+              <Text style={[styles.statsTitle, { color: colors.text }]}>Total Overview</Text>
+              <View style={styles.statsRow}>
+                <View style={styles.statItem}>
+                  <Text style={[styles.statLabel, { color: colors.textLight }]}>Total Expenses</Text>
+                  <Text style={[styles.statValue, { color: colors.primary }]}>
+                    {formatCurrency(stats.totalExpenses)}
+                  </Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.statItem}>
+                  <Text style={[styles.statLabel, { color: colors.textLight }]}>Average</Text>
+                  <Text style={[styles.statValue, { color: colors.primary }]}>
+                    {formatCurrency(stats.averageExpense)}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.highestExpense}>
+                <Text style={[styles.statLabel, { color: colors.textLight }]}>Highest Expense</Text>
+                <Text style={[styles.highestValue, { color: colors.error }]}>
+                  {formatCurrency(stats.highestExpense)}
+                </Text>
+              </View>
+            </View>
+          </ScrollView>
+
+          {/* Pagination Dots */}
+          <View style={styles.paginationDots}>
+            <View style={[
+              styles.dot,
+              currentCardIndex === 0 && styles.activeDot,
+              { backgroundColor: currentCardIndex === 0 ? colors.primary : colors.border }
+            ]} />
+            <View style={[
+              styles.dot,
+              currentCardIndex === 1 && styles.activeDot,
+              { backgroundColor: currentCardIndex === 1 ? colors.primary : colors.border }
+            ]} />
+          </View>
+        </View>
+
+        {/* Expenses Section Header */}
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Your Expenses</Text>
+          <Text style={[styles.sectionSubtitle, { color: colors.textLight }]}>
+            {filteredExpenses.length} {filteredExpenses.length === 1 ? 'expense' : 'expenses'} recorded
+          </Text>
+        </View>
+
+        {/* Expenses List */}
+        {error ? (
+          <View style={styles.errorContainer}>
+            <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
+            <TouchableOpacity
+              style={[styles.retryButton, { backgroundColor: colors.primary }]}
+              onPress={fetchExpenses}
+            >
+              <Text style={styles.retryButtonText}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.expensesListContainer}>
+            {filteredExpenses.map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                style={[styles.expenseItem, { backgroundColor: colors.card }]}
+                onPress={() => showExpenseDetails(item)}
+              >
+                <View style={styles.expenseContent}>
+                  <View style={styles.expenseHeader}>
+                    <Text style={[styles.expenseTitle, { color: colors.text }]} numberOfLines={1}>
+                      {item.title}
+                    </Text>
+                    <Text style={[styles.expenseAmount, { color: colors.primary }]}>
+                      {formatCurrency(parseFloat(item.amount))}
+                    </Text>
+                  </View>
+                  <Text style={[styles.expenseDescription, { color: colors.textLight }]} numberOfLines={2}>
+                    {item.description || 'No description'}
+                  </Text>
+                  <View style={[styles.expenseFooter, { borderTopColor: colors.border }]}>
+                    <Text style={[styles.expenseDate, { color: colors.textLight }]}>
+                      {formatDate(item.createdAt)}
+                    </Text>
+                    <TouchableOpacity
+                      style={styles.deleteButton}
+                      onPress={() => handleDeleteExpense(item.id)}
+                    >
+                      <Ionicons name="trash-outline" size={20} color={colors.error} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+            {filteredExpenses.length === 0 && (
+              <View style={styles.emptyContainer}>
+                <Text style={[styles.emptyText, { color: colors.textLight }]}>
+                  {searchQuery ? 'No matching expenses found' : 'No expenses yet'}
+                </Text>
+                {!searchQuery && (
+                  <TouchableOpacity
+                    style={[styles.addFirstButton, { backgroundColor: colors.primary }]}
+                    onPress={() => router.push('/expense-details')}
+                  >
+                    <Text style={styles.addFirstButtonText}>Add Your First Expense</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
+          </View>
+        )}
+      </ScrollView>
     </View>
   );
 }
@@ -485,11 +496,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginHorizontal: 20,
-    marginTop: 15,
-    marginBottom: 15,
+    marginVertical: 10,
     paddingHorizontal: 15,
     height: 45,
     borderRadius: 22,
+    backgroundColor: '#fff',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -510,101 +521,20 @@ const styles = StyleSheet.create({
   clearButton: {
     padding: 5,
   },
-  listContainer: {
-    padding: 15,
-    paddingTop: 5,
-    flexGrow: 1,
-  },
-  expenseItem: {
-    borderRadius: 15,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
-    overflow: 'hidden',
-  },
-  expenseContent: {
-    padding: 15,
-  },
-  expenseHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  expenseTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+  mainScroll: {
     flex: 1,
-    marginRight: 10,
-  },
-  expenseAmount: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  expenseDescription: {
-    fontSize: 14,
-    marginBottom: 12,
-    lineHeight: 20,
-  },
-  expenseFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderTopWidth: 1,
-    paddingTop: 12,
-  },
-  expenseDate: {
-    fontSize: 12,
-  },
-  deleteButton: {
-    padding: 5,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 40,
-  },
-  emptyText: {
-    fontSize: 16,
-    marginTop: 10,
-    marginBottom: 20,
-  },
-  addFirstButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
-    elevation: 8,
-  },
-  addFirstButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
   },
   statsWrapper: {
     marginBottom: 15,
   },
   statsContainer: {
-    height: 180,
+    minHeight: 170,
   },
   statsContent: {
     paddingHorizontal: 20,
   },
   statsCard: {
     width: width - 40,
-    height: 170,
     marginRight: 20,
     borderRadius: 15,
     padding: 15,
@@ -684,5 +614,103 @@ const styles = StyleSheet.create({
   },
   activeDot: {
     width: 24,
+  },
+  expensesListContainer: {
+    padding: 15,
+    paddingTop: 5,
+  },
+  expenseItem: {
+    borderRadius: 15,
+    marginBottom: 15,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+    overflow: 'hidden',
+  },
+  expenseContent: {
+    padding: 15,
+  },
+  expenseHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  expenseTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    flex: 1,
+    marginRight: 10,
+  },
+  expenseAmount: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  expenseDescription: {
+    fontSize: 14,
+    marginBottom: 12,
+    lineHeight: 20,
+  },
+  expenseFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    paddingTop: 12,
+  },
+  expenseDate: {
+    fontSize: 12,
+  },
+  deleteButton: {
+    padding: 5,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 40,
+  },
+  emptyText: {
+    fontSize: 16,
+    marginTop: 10,
+    marginBottom: 20,
+  },
+  addFirstButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
+  },
+  addFirstButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  sectionHeader: {
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.1)',
+    marginBottom: 10,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    opacity: 0.7,
   },
 }); 
