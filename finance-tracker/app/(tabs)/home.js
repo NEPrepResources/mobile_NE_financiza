@@ -1,7 +1,7 @@
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -23,6 +23,8 @@ const API_URL = 'https://67ac71475853dfff53dab929.mockapi.io/api/v1';
 
 export default function HomeScreen() {
   const router = useRouter();
+  const scrollViewRef = useRef(null);
+  const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -47,6 +49,21 @@ export default function HomeScreen() {
   useEffect(() => {
     calculateStats();
   }, [expenses]);
+
+  useEffect(() => {
+    const scrollInterval = setInterval(() => {
+      if (scrollViewRef.current) {
+        const nextIndex = currentCardIndex === 0 ? 1 : 0;
+        scrollViewRef.current.scrollTo({
+          x: nextIndex * (width - 40),
+          animated: true
+        });
+        setCurrentCardIndex(nextIndex);
+      }
+    }, 5000); // Switch every 5 seconds
+
+    return () => clearInterval(scrollInterval);
+  }, [currentCardIndex]);
 
   const calculateStats = () => {
     if (!expenses.length) {
@@ -226,9 +243,18 @@ export default function HomeScreen() {
 
       {/* Stats Cards */}
       <ScrollView
-        showsVerticalScrollIndicator={false}
+        ref={scrollViewRef}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        pagingEnabled
         style={styles.statsContainer}
         contentContainerStyle={styles.statsContent}
+        scrollEventThrottle={16}
+        onMomentumScrollEnd={(event) => {
+          const offsetX = event.nativeEvent.contentOffset.x;
+          const index = Math.round(offsetX / (width - 40));
+          setCurrentCardIndex(index);
+        }}
       >
         {/* Monthly Overview Card */}
         <View style={[styles.statsCard, { backgroundColor: colors.card }]}>
@@ -285,6 +311,20 @@ export default function HomeScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {/* Pagination Dots */}
+      <View style={styles.paginationDots}>
+        <View style={[
+          styles.dot,
+          currentCardIndex === 0 && styles.activeDot,
+          { backgroundColor: currentCardIndex === 0 ? colors.primary : colors.border }
+        ]} />
+        <View style={[
+          styles.dot,
+          currentCardIndex === 1 && styles.activeDot,
+          { backgroundColor: currentCardIndex === 1 ? colors.primary : colors.border }
+        ]} />
+      </View>
 
       {/* Search Bar */}
       <View style={[styles.searchContainer, { backgroundColor: colors.card }]}>
@@ -443,10 +483,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginHorizontal: 20,
-    marginVertical: 10,
+    marginTop: 5,
+    marginBottom: 10,
     paddingHorizontal: 15,
-    height: 40,
-    borderRadius: 20,
+    height: 45,
+    borderRadius: 22,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -455,6 +496,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 3,
+    zIndex: 0,
   },
   searchIcon: {
     marginRight: 10,
@@ -469,6 +511,7 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     padding: 15,
+    paddingTop: 5,
     flexGrow: 1,
   },
   expenseItem: {
@@ -550,27 +593,30 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   statsContainer: {
-    marginTop: 20,
-    maxHeight: 400,
-    paddingBottom: 20,
+    marginTop: 15,
+    height: 220,
+    marginBottom: 10,
+    zIndex: 1,
   },
   statsContent: {
     paddingHorizontal: 20,
-    paddingBottom: 10,
+    paddingVertical: 5,
   },
   statsCard: {
-    width: '100%',
-    marginBottom: 15,
+    width: width - 40,
+    marginRight: 20,
     borderRadius: 15,
     padding: 20,
+    backgroundColor: '#fff',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 3,
     },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+    shadowRadius: 4,
+    elevation: 4,
+    zIndex: 2,
   },
   statsTitle: {
     fontSize: 18,
@@ -622,5 +668,22 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginTop: 5,
+  },
+  paginationDots: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 5,
+    marginBottom: 15,
+    zIndex: 1,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginHorizontal: 4,
+  },
+  activeDot: {
+    width: 24,
   },
 }); 
