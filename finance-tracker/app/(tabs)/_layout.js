@@ -1,7 +1,7 @@
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs, useRouter } from 'expo-router';
-import { Platform, StyleSheet, TouchableOpacity } from 'react-native';
+import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
 
 export default function TabLayout() {
@@ -16,10 +16,9 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: colors.card,
           borderTopColor: colors.border,
-          height: 65,
+          height: 60,
           paddingBottom: 8,
           paddingTop: 8,
-          position: 'relative',
         },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textLight,
@@ -42,12 +41,13 @@ export default function TabLayout() {
               onPress={() => router.push('/expense-details')}
               style={[styles.addButton, { backgroundColor: colors.primary }]}
             >
-              <Ionicons 
-                name="add" 
-                size={32} 
-                color="#fff"
-                style={styles.addIcon} 
-              />
+              <View style={styles.addButtonInner}>
+                <Ionicons 
+                  name="add" 
+                  size={32} 
+                  color="#fff"
+                />
+              </View>
             </TouchableOpacity>
           ),
         }}
@@ -91,9 +91,9 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   addButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     marginBottom: Platform.OS === 'ios' ? 40 : 30,
     justifyContent: 'center',
     alignItems: 'center',
@@ -105,8 +105,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4.65,
     elevation: 8,
+    borderWidth: 4,
+    borderColor: '#fff',
   },
-  addIcon: {
-    marginTop: -2,
+  addButtonInner: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 28,
   },
 }); 
