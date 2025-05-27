@@ -18,20 +18,26 @@ export const userService = {
       }
       return response.data[0];
     } catch (error) {
-      throw new Error('Failed to login. Please try again.');
+      throw new Error(`Failed to login. Please try again. Details: ${error.message}`);
     }
   },
 
   getUserProfile: async (id = '1') => {
     try {
-      const response = await api.get(`/users/${id}`);
+      const response = await api.get('/users');
+      const user = response.data.find(user => user.id === id);
+      if (!user) {
+        throw new Error('User not found');
+      }
+      const username = user.username || 'user@example.com';
       return {
-        id: response.data.id || '1',
-        name: response.data.username || response.data.name || 'User',
-        email: response.data.email || `${response.data.username || 'user'}@example.com`,
+        id: user.id || '1',
+        name: username.split('@')[0] || 'User',
+        email: username,
       };
     } catch (error) {
-      throw new Error('Failed to fetch user profile');
+      console.error('API Error in getUserProfile:', error.response ? error.response.data : error.message);
+      throw new Error(`Failed to fetch user profile. Details: ${error.message}`);
     }
   },
 
@@ -111,4 +117,4 @@ export const expenseService = {
       throw new Error('Failed to delete all expenses');
     }
   },
-}; 
+};

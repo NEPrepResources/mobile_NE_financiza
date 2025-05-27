@@ -34,6 +34,9 @@ export default function ProfileScreen() {
   const [error, setError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
 
+  // Replace this with the actual logged-in user ID from your auth system
+  const currentUserId = '1'; // Placeholder: Fetch this dynamically after login
+
   useEffect(() => {
     fetchUserData();
   }, []);
@@ -43,23 +46,19 @@ export default function ProfileScreen() {
       setLoading(true);
       setError(null);
       
-      // Add a small delay for retry attempts to avoid rate limiting
       if (isRetry) {
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
       
-      const data = await userService.getUserProfile('1');
+      const data = await userService.getUserProfile(currentUserId);
       setUser(data);
       setRetryCount(0);
     } catch (err) {
-      console.error('Error fetching user data:', err);
-      
+      console.error('Fetch User Data Error:', err.message);
       if (retryCount < 2 && !isRetry) {
         setRetryCount(prev => prev + 1);
         return fetchUserData(true);
       }
-
-      // Use mock data as fallback after retries
       setUser(MOCK_USER);
       setError('Unable to connect to server. Using offline data.');
     } finally {
@@ -295,4 +294,4 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginLeft: 10,
   },
-}); 
+});
