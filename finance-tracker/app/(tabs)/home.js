@@ -8,6 +8,7 @@ import {
     Dimensions,
     FlatList,
     Platform,
+    ScrollView,
     StatusBar,
     StyleSheet,
     Text,
@@ -30,9 +31,62 @@ export default function HomeScreen() {
   const colorScheme = useColorScheme() ?? 'light';
   const colors = Colors[colorScheme];
 
+  // New state for expense statistics
+  const [stats, setStats] = useState({
+    totalExpenses: 0,
+    averageExpense: 0,
+    highestExpense: 0,
+    thisMonth: 0,
+    lastMonth: 0,
+  });
+
   useEffect(() => {
     fetchExpenses();
   }, []);
+
+  useEffect(() => {
+    calculateStats();
+  }, [expenses]);
+
+  const calculateStats = () => {
+    if (!expenses.length) {
+      setStats({
+        totalExpenses: 0,
+        averageExpense: 0,
+        highestExpense: 0,
+        thisMonth: 0,
+        lastMonth: 0,
+      });
+      return;
+    }
+
+    const now = new Date();
+    const thisMonth = now.getMonth();
+    const thisYear = now.getFullYear();
+    const lastMonth = thisMonth === 0 ? 11 : thisMonth - 1;
+    const lastMonthYear = thisMonth === 0 ? thisYear - 1 : thisYear;
+
+    const total = expenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
+    const highest = Math.max(...expenses.map(exp => parseFloat(exp.amount)));
+    
+    const thisMonthExpenses = expenses.filter(exp => {
+      const date = new Date(exp.createdAt);
+      return date.getMonth() === thisMonth && date.getFullYear() === thisYear;
+    });
+
+    const lastMonthExpenses = expenses.filter(exp => {
+      const date = new Date(exp.createdAt);
+      return date.getMonth() === lastMonth && date.getFullYear() === lastMonthYear;
+    });
+
+    setStats({
+      totalExpenses: total,
+      averageExpense: total / expenses.length,
+      highestExpense: highest,
+      thisMonth: thisMonthExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0),
+      lastMonth: lastMonthExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0),
+    });
+  };
 
   const fetchExpenses = async () => {
     try {
@@ -128,6 +182,15 @@ export default function HomeScreen() {
     }
   };
 
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  };
+
   if (loading && !refreshing) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
@@ -136,11 +199,23 @@ export default function HomeScreen() {
     );
   }
 
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  const currentMonth = monthNames[new Date().getMonth()];
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
+      
+      {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.primary }]}>
-        <Text style={styles.title}>Financiza</Text>
+        <View>
+          <Text style={styles.welcomeText}>Welcome back!</Text>
+          <Text style={styles.title}>Financiza</Text>
+        </View>
         <TouchableOpacity
           style={styles.refreshButton}
           onPress={handleRefresh}
@@ -149,11 +224,75 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Stats Cards */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.statsContainer}
+        contentContainerStyle={styles.statsContent}
+      >
+        {/* Monthly Overview Card */}
+        <View style={[styles.statsCard, { backgroundColor: colors.card }]}>
+          <Text style={[styles.statsTitle, { color: colors.text }]}>{currentMonth} Overview</Text>
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Text style={[styles.statLabel, { color: colors.textLight }]}>This Month</Text>
+              <Text style={[styles.statValue, { color: colors.secondary }]}>
+                {formatCurrency(stats.thisMonth)}
+              </Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={[styles.statLabel, { color: colors.textLight }]}>Last Month</Text>
+              <Text style={[styles.statValue, { color: colors.secondary }]}>
+                {formatCurrency(stats.lastMonth)}
+              </Text>
+            </View>
+          </View>
+          <View style={[styles.monthComparison, { 
+            backgroundColor: stats.thisMonth <= stats.lastMonth ? colors.success : colors.error 
+          }]}>
+            <Text style={styles.comparisonText}>
+              {stats.thisMonth <= stats.lastMonth 
+                ? '🎉 Spending less than last month!'
+                : '⚠️ Spending more than last month'}
+            </Text>
+          </View>
+        </View>
+
+        {/* Total Expenses Card */}
+        <View style={[styles.statsCard, { backgroundColor: colors.card }]}>
+          <Text style={[styles.statsTitle, { color: colors.text }]}>Total Overview</Text>
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Text style={[styles.statLabel, { color: colors.textLight }]}>Total Expenses</Text>
+              <Text style={[styles.statValue, { color: colors.primary }]}>
+                {formatCurrency(stats.totalExpenses)}
+              </Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={[styles.statLabel, { color: colors.textLight }]}>Average</Text>
+              <Text style={[styles.statValue, { color: colors.primary }]}>
+                {formatCurrency(stats.averageExpense)}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.highestExpense}>
+            <Text style={[styles.statLabel, { color: colors.textLight }]}>Highest Expense</Text>
+            <Text style={[styles.highestValue, { color: colors.error }]}>
+              {formatCurrency(stats.highestExpense)}
+            </Text>
+          </View>
+        </View>
+      </ScrollView>
+
+      {/* Search Bar */}
       <View style={[styles.searchContainer, { backgroundColor: colors.card }]}>
         <Ionicons name="search" size={20} color={colors.textLight} style={styles.searchIcon} />
         <TextInput
           style={[styles.searchInput, { color: colors.text }]}
-          placeholder="Search by title, description, or amount..."
+          placeholder="Search expenses..."
           placeholderTextColor={colors.textLight}
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -196,7 +335,7 @@ export default function HomeScreen() {
                     {item.title}
                   </Text>
                   <Text style={[styles.expenseAmount, { color: colors.primary }]}>
-                    ${parseFloat(item.amount).toFixed(2)}
+                    {formatCurrency(parseFloat(item.amount))}
                   </Text>
                 </View>
                 <Text style={[styles.expenseDescription, { color: colors.textLight }]} numberOfLines={2}>
@@ -283,7 +422,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4.65,
     elevation: 8,
-    marginBottom: 10,
+  },
+  welcomeText: {
+    fontSize: 16,
+    color: '#fff',
+    opacity: 0.9,
+    marginBottom: 4,
   },
   title: {
     fontSize: 28,
@@ -405,5 +549,77 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  statsContainer: {
+    marginTop: 20,
+    maxHeight: 200,
+  },
+  statsContent: {
+    paddingHorizontal: 15,
+  },
+  statsCard: {
+    width: width - 50,
+    marginHorizontal: 5,
+    borderRadius: 15,
+    padding: 15,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  statsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 15,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statDivider: {
+    width: 1,
+    height: 40,
+    backgroundColor: 'rgba(0,0,0,0.1)',
+    marginHorizontal: 15,
+  },
+  statLabel: {
+    fontSize: 14,
+    marginBottom: 5,
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  monthComparison: {
+    padding: 8,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  comparisonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  highestExpense: {
+    alignItems: 'center',
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.1)',
+  },
+  highestValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginTop: 5,
   },
 }); 

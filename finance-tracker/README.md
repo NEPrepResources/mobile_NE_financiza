@@ -1,50 +1,128 @@
-# Welcome to your Expo app 👋
+# Finance Tracker Mobile App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A modern, user-friendly mobile application for tracking personal expenses with real-time updates and intuitive visualization.
 
-## Get started
+## App Architecture
 
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+### Frontend Architecture
+```
+finance-tracker/
+├── app/
+│   ├── (tabs)/
+│   │   ├── _layout.js       # Tab navigation configuration
+│   │   ├── home.js          # Home screen with expense list and stats
+│   │   └── profile.js       # User profile management
+│   ├── expense-details.js   # Add/Edit expense form
+│   └── index.js            # Entry point/Splash screen
+├── constants/
+│   └── Colors.js           # Theme configuration
+├── hooks/
+│   └── useColorScheme.js   # Theme management
+└── components/             # Reusable UI components
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Data Flow Diagram
 
-## Learn more
+```mermaid
+graph TD
+    A[User Interface] --> B[Tab Navigation]
+    B --> C[Home Screen]
+    B --> D[Profile Screen]
+    C --> E[Expense List]
+    C --> F[Statistics]
+    E --> G[Add/Edit Expense]
+    E --> H[Delete Expense]
+    F --> I[Monthly Overview]
+    F --> J[Total Overview]
+    
+    %% API Integration
+    E <--> K[Expense API]
+    G <--> K
+    H --> K
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+## API Endpoints
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+### Base URL
+```
+https://67ac71475853dfff53dab929.mockapi.io/api/v1
+```
 
-## Join the community
+### Endpoints
 
-Join our community of developers creating universal apps.
+1. **Expenses**
+   - GET `/expenses` - Fetch all expenses
+   - GET `/expenses/:id` - Get specific expense
+   - POST `/expenses` - Create new expense
+   - PUT `/expenses/:id` - Update expense
+   - DELETE `/expenses/:id` - Delete expense
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+2. **Users**
+   - GET `/users` - Fetch user profile
+   - GET `/users/:id` - Get specific user
+   - PUT `/users/:id` - Update user profile
+
+## Pages and Features
+
+### 1. Home Screen
+- Expense statistics and overview
+  - Monthly comparison (This month vs Last month)
+  - Total expenses overview
+  - Average expense calculation
+  - Highest expense tracking
+- Search functionality
+  - Search by title, description, or amount
+- Expense list
+  - View all expenses
+  - Delete expenses
+  - View expense details
+- Pull-to-refresh functionality
+
+### 2. Add/Edit Expense Screen
+- Form validation
+  - Required title
+  - Valid amount (positive numbers only)
+  - Optional description
+- Real-time amount formatting
+- Success/Error notifications
+- Automatic list update
+
+### 3. Profile Screen
+- User information display
+- Theme preferences
+- App settings
+
+## Color Scheme
+
+### Light Mode
+- Primary: `#2E7D32` (Deep green for growth)
+- Secondary: `#1976D2` (Trustworthy blue)
+- Background: `#FFFFFF` (Clean white)
+- Card Background: `#F5F9FF` (Light blue tint)
+- Text: `#1C2833` (Dark blue-gray)
+
+### Dark Mode
+- Primary: `#66BB6A` (Lighter green)
+- Secondary: `#42A5F5` (Lighter blue)
+- Background: `#0A1929` (Deep blue-black)
+- Card Background: `#132F4C` (Navy blue)
+- Text: `#FFFFFF` (White)
+
+## State Management
+- Local state using React hooks
+- Real-time updates
+- Optimistic UI updates
+- Error handling and recovery
+
+## Data Validation
+- Amount: Positive numbers only, max 2 decimal places
+- Title: Required, max 50 characters
+- Description: Optional, max 200 characters
+
+## Future Enhancements
+1. Authentication system
+2. Categories management
+3. Budget planning
+4. Export functionality
+5. Charts and advanced analytics
+6. Multiple currency support
