@@ -3,18 +3,27 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Image,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Image,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { Colors } from '../../constants/Colors';
+import { Colors } from '../../constants/Colors.js';
+import { userService } from '../../src/services/api';
 
 const API_URL = 'https://67ac71475853dfff53dab929.mockapi.io/api/v1';
+
+// Fallback mock data in case API fails
+const MOCK_USER = {
+  id: '1',
+  name: 'John Doe',
+  email: 'john.doe@example.com',
+};
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -23,37 +32,70 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [error, setError] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     fetchUserData();
   }, []);
 
-  const fetchUserData = async () => {
+  const fetchUserData = async (isRetry = false) => {
     try {
       setLoading(true);
-      // Using ID 1 as an example - in a real app, this would come from authentication
-      const response = await fetch(`${API_URL}/users/1`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch user data');
-      }
-      const data = await response.json();
-      setUser({
-        id: data.id,
-        name: data.username,
-        email: data.email || data.username,
-        avatar: 'https://images.pexels.com/photos/4386442/pexels-photo-4386442.jpeg', // Using a default avatar since the API doesn't provide one
-      });
       setError(null);
+      
+      // Add a small delay for retry attempts to avoid rate limiting
+      if (isRetry) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+      
+      const data = await userService.getUserProfile('1');
+      setUser(data);
+      setRetryCount(0);
     } catch (err) {
-      setError('Failed to load profile. Please try again later.');
       console.error('Error fetching user data:', err);
+      
+      if (retryCount < 2 && !isRetry) {
+        setRetryCount(prev => prev + 1);
+        return fetchUserData(true);
+      }
+
+      // Use mock data as fallback after retries
+      setUser(MOCK_USER);
+      setError('Unable to connect to server. Using offline data.');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleRefresh = () => {
+    setRetryCount(0);
+    fetchUserData();
+  };
+
   const handleLogout = () => {
-    router.replace('/');
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: () => router.replace('/'),
+        },
+      ],
+    );
+  };
+
+  const handleSettingPress = (setting) => {
+    Alert.alert(
+      'Coming Soon',
+      `${setting} feature will be available in the next update!`,
+      [{ text: 'OK' }]
+    );
   };
 
   if (loading) {
@@ -70,55 +112,67 @@ export default function ProfileScreen() {
         <Text style={styles.title}>Profile</Text>
       </View>
       
-      <ScrollView style={styles.content}>
-        {error ? (
-          <View style={[styles.errorCard, { backgroundColor: colors.error }]}>
-            <Text style={styles.errorText}>{error}</Text>
-            <TouchableOpacity
-              style={[styles.retryButton, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]}
-              onPress={fetchUserData}
+      <ScrollView 
+        style={styles.content}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+        refreshing={loading}
+        onRefresh={handleRefresh}
+      >
+        <View style={styles.profileSection}>
+          <Image
+            source={require('../../assets/default-avatar.png')}
+            style={styles.profileImage}
+          />
+          <Text style={[styles.name, { color: colors.text }]}>{user?.name}</Text>
+          <Text style={[styles.email, { color: colors.textLight }]}>{user?.email}</Text>
+          
+          {error && (
+            <TouchableOpacity 
+              style={styles.offlineBanner}
+              onPress={handleRefresh}
             >
-              <Text style={styles.retryButtonText}>Retry</Text>
+              <Text style={[styles.offlineText, { color: colors.textLight }]}>
+                {error} Tap to retry.
+              </Text>
             </TouchableOpacity>
-          </View>
-        ) : (
-          <>
-            <View style={styles.profileSection}>
-              <Image
-                source={{ uri: user?.avatar }}
-                style={styles.profileImage}
-              />
-              <Text style={[styles.name, { color: colors.text }]}>{user?.name}</Text>
-              <Text style={[styles.email, { color: colors.textLight }]}>{user?.email}</Text>
+          )}
+        </View>
+
+        <View style={[styles.settingsContainer, { backgroundColor: colors.card }]}>
+          <TouchableOpacity 
+            style={[styles.settingItem, { borderBottomColor: colors.border }]}
+            onPress={() => handleSettingPress('Edit Profile')}
+          >
+            <View style={styles.settingLeft}>
+              <Ionicons name="person-outline" size={24} color={colors.primary} />
+              <Text style={[styles.settingText, { color: colors.text }]}>Edit Profile</Text>
             </View>
+            <Ionicons name="chevron-forward" size={24} color={colors.textLight} />
+          </TouchableOpacity>
 
-            <View style={[styles.settingsContainer, { backgroundColor: colors.card }]}>
-              <TouchableOpacity style={styles.settingItem}>
-                <View style={styles.settingLeft}>
-                  <Ionicons name="person-outline" size={24} color={colors.primary} />
-                  <Text style={[styles.settingText, { color: colors.text }]}>Edit Profile</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={24} color={colors.textLight} />
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.settingItem}>
-                <View style={styles.settingLeft}>
-                  <Ionicons name="notifications-outline" size={24} color={colors.primary} />
-                  <Text style={[styles.settingText, { color: colors.text }]}>Notifications</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={24} color={colors.textLight} />
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.settingItem}>
-                <View style={styles.settingLeft}>
-                  <Ionicons name="moon-outline" size={24} color={colors.primary} />
-                  <Text style={[styles.settingText, { color: colors.text }]}>Dark Mode</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={24} color={colors.textLight} />
-              </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.settingItem, { borderBottomColor: colors.border }]}
+            onPress={() => handleSettingPress('Notifications')}
+          >
+            <View style={styles.settingLeft}>
+              <Ionicons name="notifications-outline" size={24} color={colors.primary} />
+              <Text style={[styles.settingText, { color: colors.text }]}>Notifications</Text>
             </View>
-          </>
-        )}
+            <Ionicons name="chevron-forward" size={24} color={colors.textLight} />
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[styles.settingItem, { borderBottomColor: colors.border }]}
+            onPress={() => handleSettingPress('Theme Settings')}
+          >
+            <View style={styles.settingLeft}>
+              <Ionicons name="moon-outline" size={24} color={colors.primary} />
+              <Text style={[styles.settingText, { color: colors.text }]}>Dark Mode</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={24} color={colors.textLight} />
+          </TouchableOpacity>
+        </View>
 
         <TouchableOpacity
           style={[styles.logoutButton, { backgroundColor: colors.error }]}
@@ -149,11 +203,11 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: 2,
     },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
-    elevation: 8,
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
   },
   title: {
     fontSize: 28,
@@ -165,27 +219,9 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  contentContainer: {
     padding: 20,
-  },
-  errorCard: {
-    padding: 20,
-    borderRadius: 10,
-    marginBottom: 20,
-    alignItems: 'center',
-  },
-  errorText: {
-    color: '#fff',
-    textAlign: 'center',
-    marginBottom: 10,
-  },
-  retryButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  retryButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
   },
   profileSection: {
     alignItems: 'center',
@@ -196,6 +232,7 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 50,
     marginBottom: 15,
+    backgroundColor: '#eee',
   },
   name: {
     fontSize: 24,
@@ -204,11 +241,21 @@ const styles = StyleSheet.create({
   },
   email: {
     fontSize: 16,
+    marginBottom: 10,
+  },
+  offlineBanner: {
+    marginTop: 10,
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+  },
+  offlineText: {
+    fontSize: 14,
+    textAlign: 'center',
   },
   settingsContainer: {
     borderRadius: 15,
-    padding: 10,
-    marginBottom: 20,
+    marginBottom: 30,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -222,8 +269,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 15,
-    paddingHorizontal: 10,
+    padding: 15,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(0,0,0,0.1)',
   },
   settingLeft: {
     flexDirection: 'row',
@@ -239,14 +287,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 15,
     borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    marginBottom: 20,
   },
   logoutText: {
     color: '#fff',

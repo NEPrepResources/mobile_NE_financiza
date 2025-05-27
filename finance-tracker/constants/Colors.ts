@@ -9,9 +9,6 @@ export const Colors = {
     border: '#e1e1e1',
     error: '#d32f2f',
     success: '#388e3c',
-    tint: '#2E7D32',
-    tabIconDefault: '#ccc',
-    tabIconSelected: '#2E7D32',
   },
   dark: {
     text: '#fff',
@@ -23,8 +20,5 @@ export const Colors = {
     border: '#333',
     error: '#f44336',
     success: '#4caf50',
-    tint: '#4CAF50',
-    tabIconDefault: '#666',
-    tabIconSelected: '#4CAF50',
   },
 }; 

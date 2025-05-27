@@ -21,6 +21,28 @@ export const userService = {
       throw new Error('Failed to login. Please try again.');
     }
   },
+
+  getUserProfile: async (id = '1') => {
+    try {
+      const response = await api.get(`/users/${id}`);
+      return {
+        id: response.data.id || '1',
+        name: response.data.username || response.data.name || 'User',
+        email: response.data.email || `${response.data.username || 'user'}@example.com`,
+      };
+    } catch (error) {
+      throw new Error('Failed to fetch user profile');
+    }
+  },
+
+  updateUserProfile: async (id, userData) => {
+    try {
+      const response = await api.put(`/users/${id}`, userData);
+      return response.data;
+    } catch (error) {
+      throw new Error('Failed to update user profile');
+    }
+  },
 };
 
 export const expenseService = {

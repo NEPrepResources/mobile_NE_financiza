@@ -82,8 +82,12 @@ export default function HomeScreen() {
     const lastMonth = thisMonth === 0 ? 11 : thisMonth - 1;
     const lastMonthYear = thisMonth === 0 ? thisYear - 1 : thisYear;
 
-    const total = expenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
-    const highest = Math.max(...expenses.map(exp => parseFloat(exp.amount)));
+    const total = expenses.reduce((sum, exp) => {
+      const amount = parseFloat(exp.amount) || 0;
+      return sum + amount;
+    }, 0);
+
+    const highest = Math.max(...expenses.map(exp => parseFloat(exp.amount) || 0));
     
     const thisMonthExpenses = expenses.filter(exp => {
       const date = new Date(exp.createdAt);
@@ -95,12 +99,22 @@ export default function HomeScreen() {
       return date.getMonth() === lastMonth && date.getFullYear() === lastMonthYear;
     });
 
+    const thisMonthTotal = thisMonthExpenses.reduce((sum, exp) => {
+      const amount = parseFloat(exp.amount) || 0;
+      return sum + amount;
+    }, 0);
+
+    const lastMonthTotal = lastMonthExpenses.reduce((sum, exp) => {
+      const amount = parseFloat(exp.amount) || 0;
+      return sum + amount;
+    }, 0);
+
     setStats({
       totalExpenses: total,
       averageExpense: total / expenses.length,
       highestExpense: highest,
-      thisMonth: thisMonthExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0),
-      lastMonth: lastMonthExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0),
+      thisMonth: thisMonthTotal,
+      lastMonth: lastMonthTotal,
     });
   };
 
@@ -199,12 +213,13 @@ export default function HomeScreen() {
   };
 
   const formatCurrency = (amount) => {
+    const value = parseFloat(amount) || 0;
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }).format(amount);
+    }).format(value);
   };
 
   if (loading && !refreshing) {
