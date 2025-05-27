@@ -34,8 +34,9 @@ export default function ProfileScreen() {
   const [error, setError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
 
-  // Replace this with the actual logged-in user ID from your auth system
-  const currentUserId = '1'; // Placeholder: Fetch this dynamically after login
+  // Replace this with the actual logged-in username from your auth system
+  const currentUsername = 'Rosemary.Auer@gmail.com'; // Placeholder: Fetch this dynamically after login
+  console.log('Fetching profile for username:', currentUsername);
 
   useEffect(() => {
     fetchUserData();
@@ -50,7 +51,7 @@ export default function ProfileScreen() {
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
       
-      const data = await userService.getUserProfile(currentUserId);
+      const data = await userService.getUserProfile(currentUsername);
       setUser(data);
       setRetryCount(0);
     } catch (err) {

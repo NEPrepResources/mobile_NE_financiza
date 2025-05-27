@@ -22,18 +22,32 @@ export const userService = {
     }
   },
 
-  getUserProfile: async (id = '1') => {
+  getAllUsers: async () => {
     try {
       const response = await api.get('/users');
-      const user = response.data.find(user => user.id === id);
-      if (!user) {
-        throw new Error('User not found');
+      console.log('API Response from /users:', response.data); // Log the response for debugging
+      if (!response.data || !Array.isArray(response.data)) {
+        throw new Error('Invalid API response: Expected an array of users');
       }
-      const username = user.username || 'user@example.com';
+      return response.data;
+    } catch (error) {
+      console.error('API Error in getAllUsers:', error.response ? error.response.data : error.message);
+      throw new Error(`Failed to fetch users. Details: ${error.message}`);
+    }
+  },
+
+  getUserProfile: async (username) => {
+    try {
+      const users = await userService.getAllUsers();
+      const user = users.find(user => user.username === username);
+      if (!user) {
+        throw new Error(`User with username ${username} not found in API response`);
+      }
+      const userUsername = user.username || 'user@example.com';
       return {
-        id: user.id || '1',
-        name: username.split('@')[0] || 'User',
-        email: username,
+        id: user.id,
+        name: userUsername.split('@')[0] || 'User',
+        email: userUsername,
       };
     } catch (error) {
       console.error('API Error in getUserProfile:', error.response ? error.response.data : error.message);
