@@ -12,104 +12,130 @@ import {
     StyleSheet,
     Text,
     TextInput,
-    ToastAndroid,
     TouchableOpacity,
-    View,
+    View
 } from 'react-native';
 import { Colors } from '../constants/Colors';
-import { expenseService } from '../src/services/api';
+
+const API_URL = 'https://67ac71475853dfff53dab929.mockapi.io/api/v1';
 
 export default function ExpenseDetailsScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams();
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [expense, setExpense] = useState({
-    name: '',
-    amount: '',
-    description: '',
-  });
+  const params = useLocalSearchParams();
   const colorScheme = useColorScheme() ?? 'light';
   const colors = Colors[colorScheme];
 
+  const [loading, setLoading] = useState(false);
+  const [title, setTitle] = useState('');
+  const [amount, setAmount] = useState('');
+  const [description, setDescription] = useState('');
+  const [errors, setErrors] = useState({});
+
   useEffect(() => {
-    if (id) {
+    if (params.id) {
       fetchExpenseDetails();
-    } else {
-      setLoading(false);
     }
-  }, [id]);
+  }, [params.id]);
 
   const fetchExpenseDetails = async () => {
     try {
-      const data = await expenseService.getExpenseById(id);
-      setExpense(data);
-    } catch (error) {
-      Alert.alert('Error', error.message);
-      router.back();
+      setLoading(true);
+      const response = await fetch(`${API_URL}/expenses/${params.id}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch expense details');
+      }
+      const data = await response.json();
+      setTitle(data.title);
+      setAmount(data.amount.toString());
+      setDescription(data.description || '');
+    } catch (err) {
+      Alert.alert('Error', 'Failed to load expense details');
+      console.error('Error fetching expense details:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const showToast = (message) => {
-    if (Platform.OS === 'android') {
-      ToastAndroid.show(message, ToastAndroid.SHORT);
-    } else {
-      Alert.alert('Success', message);
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!title.trim()) {
+      newErrors.title = 'Title is required';
     }
+
+    if (!amount.trim()) {
+      newErrors.amount = 'Amount is required';
+    } else {
+      const amountNum = parseFloat(amount);
+      if (isNaN(amountNum)) {
+        newErrors.amount = 'Amount must be a valid number';
+      } else if (amountNum <= 0) {
+        newErrors.amount = 'Amount must be greater than 0';
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSave = async () => {
-    if (!expense.name || !expense.amount || !expense.description) {
-      Alert.alert('Error', 'Please fill in all required fields');
+    if (!validateForm()) {
       return;
     }
 
-    setSaving(true);
     try {
-      if (id) {
-        await expenseService.updateExpense(id, expense);
-        showToast('Expense updated successfully');
-      } else {
-        await expenseService.createExpense(expense);
-        showToast('Expense created successfully');
+      setLoading(true);
+      const expenseData = {
+        title: title.trim(),
+        amount: parseFloat(amount),
+        description: description.trim(),
+      };
+
+      const url = params.id 
+        ? `${API_URL}/expenses/${params.id}`
+        : `${API_URL}/expenses`;
+
+      const response = await fetch(url, {
+        method: params.id ? 'PUT' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(expenseData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save expense');
       }
-      router.back();
-    } catch (error) {
-      Alert.alert('Error', error.message);
+
+      Alert.alert(
+        'Success',
+        params.id ? 'Expense updated successfully' : 'Expense added successfully',
+        [{ text: 'OK', onPress: () => router.back() }]
+      );
+    } catch (err) {
+      Alert.alert('Error', 'Failed to save expense. Please try again.');
+      console.error('Error saving expense:', err);
     } finally {
-      setSaving(false);
+      setLoading(false);
     }
   };
 
-  const handleDelete = async () => {
-    Alert.alert(
-      'Delete Expense',
-      'Are you sure you want to delete this expense?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await expenseService.deleteExpense(id);
-              showToast('Expense deleted successfully');
-              router.back();
-            } catch (error) {
-              Alert.alert('Error', error.message);
-            }
-          },
-        },
-      ]
-    );
+  const formatAmount = (text) => {
+    // Remove any non-numeric characters except decimal point
+    const formatted = text.replace(/[^0-9.]/g, '');
+    // Ensure only one decimal point
+    const parts = formatted.split('.');
+    if (parts.length > 2) {
+      return amount; // Keep the previous valid value
+    }
+    // Limit decimal places to 2
+    if (parts[1] && parts[1].length > 2) {
+      return `${parts[0]}.${parts[1].slice(0, 2)}`;
+    }
+    return formatted;
   };
 
-  if (loading) {
+  if (loading && params.id) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color={colors.primary} />
@@ -130,85 +156,78 @@ export default function ExpenseDetailsScreen() {
         >
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>
-          {id ? 'Edit Expense' : 'Add New Expense'}
-        </Text>
-        <View style={styles.placeholder} />
+        <Text style={styles.title}>{params.id ? 'Edit Expense' : 'Add Expense'}</Text>
+        <TouchableOpacity
+          style={[styles.saveButton, loading && styles.saveButtonDisabled]}
+          onPress={handleSave}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator size="small" color={colors.primary} />
+          ) : (
+            <Text style={styles.saveButtonText}>Save</Text>
+          )}
+        </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.formContainer}>
+      <ScrollView style={styles.content}>
+        <View style={[styles.card, { backgroundColor: colors.card }]}>
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: colors.text }]}>Name</Text>
-            <View style={[styles.inputContainer, { backgroundColor: colors.card }]}>
-              <Ionicons name="pricetag-outline" size={20} color={colors.textLight} />
-              <TextInput
-                style={[styles.input, { color: colors.text }]}
-                placeholder="Enter expense name"
-                placeholderTextColor={colors.textLight}
-                value={expense.name}
-                onChangeText={(text) => setExpense({ ...expense, name: text })}
-                editable={!saving}
-              />
-            </View>
+            <Text style={[styles.label, { color: colors.text }]}>Title</Text>
+            <TextInput
+              style={[
+                styles.input,
+                { backgroundColor: colors.background, color: colors.text },
+                errors.title && styles.inputError,
+              ]}
+              placeholder="Enter expense title"
+              placeholderTextColor={colors.textLight}
+              value={title}
+              onChangeText={setTitle}
+              maxLength={50}
+            />
+            {errors.title && (
+              <Text style={styles.errorText}>{errors.title}</Text>
+            )}
           </View>
 
           <View style={styles.inputGroup}>
             <Text style={[styles.label, { color: colors.text }]}>Amount</Text>
-            <View style={[styles.inputContainer, { backgroundColor: colors.card }]}>
-              <Ionicons name="cash-outline" size={20} color={colors.textLight} />
-              <TextInput
-                style={[styles.input, { color: colors.text }]}
-                placeholder="Enter amount"
-                placeholderTextColor={colors.textLight}
-                value={expense.amount}
-                onChangeText={(text) => setExpense({ ...expense, amount: text })}
-                keyboardType="numeric"
-                editable={!saving}
-              />
-            </View>
+            <TextInput
+              style={[
+                styles.input,
+                { backgroundColor: colors.background, color: colors.text },
+                errors.amount && styles.inputError,
+              ]}
+              placeholder="Enter amount"
+              placeholderTextColor={colors.textLight}
+              value={amount}
+              onChangeText={(text) => setAmount(formatAmount(text))}
+              keyboardType="decimal-pad"
+              maxLength={10}
+            />
+            {errors.amount && (
+              <Text style={styles.errorText}>{errors.amount}</Text>
+            )}
           </View>
 
           <View style={styles.inputGroup}>
             <Text style={[styles.label, { color: colors.text }]}>Description</Text>
-            <View style={[styles.inputContainer, styles.descriptionContainer, { backgroundColor: colors.card }]}>
-              <Ionicons name="document-text-outline" size={20} color={colors.textLight} />
-              <TextInput
-                style={[styles.input, styles.descriptionInput, { color: colors.text }]}
-                placeholder="Enter description"
-                placeholderTextColor={colors.textLight}
-                value={expense.description}
-                onChangeText={(text) => setExpense({ ...expense, description: text })}
-                multiline
-                numberOfLines={4}
-                editable={!saving}
-              />
-            </View>
-          </View>
-
-          <View style={styles.buttonContainer}>
-            {id && (
-              <TouchableOpacity
-                style={[styles.button, styles.deleteButton]}
-                onPress={handleDelete}
-                disabled={saving}
-              >
-                <Ionicons name="trash-outline" size={20} color="#fff" />
-                <Text style={styles.buttonText}>Delete</Text>
-              </TouchableOpacity>
-            )}
-            <TouchableOpacity
+            <TextInput
               style={[
-                styles.button,
-                styles.saveButton,
-                { opacity: saving ? 0.7 : 1 },
+                styles.input,
+                styles.textArea,
+                { backgroundColor: colors.background, color: colors.text },
               ]}
-              onPress={handleSave}
-              disabled={saving}
-            >
-              <Ionicons name="save-outline" size={20} color="#fff" />
-              <Text style={styles.buttonText}>{saving ? 'Saving...' : 'Save'}</Text>
-            </TouchableOpacity>
+              placeholder="Enter description (optional)"
+              placeholderTextColor={colors.textLight}
+              value={description}
+              onChangeText={setDescription}
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+              maxLength={200}
+            />
           </View>
         </View>
       </ScrollView>
@@ -227,8 +246,8 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
     padding: 20,
     paddingTop: Platform.OS === 'ios' ? 60 : 40,
     borderBottomLeftRadius: 20,
@@ -241,12 +260,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4.65,
     elevation: 8,
-    marginBottom: 10,
   },
   backButton: {
-    padding: 5,
+    padding: 8,
+    marginLeft: -8,
   },
-  headerTitle: {
+  title: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#fff',
@@ -254,29 +273,28 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
   },
-  placeholder: {
-    width: 34,
+  saveButton: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    minWidth: 70,
+    alignItems: 'center',
   },
-  scrollContainer: {
-    flexGrow: 1,
+  saveButtonDisabled: {
+    opacity: 0.6,
   },
-  formContainer: {
+  saveButtonText: {
+    color: '#FC4E68',
+    fontWeight: 'bold',
+  },
+  content: {
+    flex: 1,
     padding: 20,
   },
-  inputGroup: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 12,
-    paddingHorizontal: 15,
-    height: 50,
+  card: {
+    borderRadius: 15,
+    padding: 20,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -286,52 +304,39 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 3,
   },
-  input: {
-    flex: 1,
-    marginLeft: 10,
+  inputGroup: {
+    marginBottom: 20,
+  },
+  label: {
     fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
   },
-  descriptionContainer: {
-    height: 100,
-    alignItems: 'flex-start',
-    paddingTop: 15,
-  },
-  descriptionInput: {
-    height: 80,
-    textAlignVertical: 'top',
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 20,
-  },
-  button: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 15,
-    borderRadius: 12,
-    marginHorizontal: 5,
+  input: {
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 16,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 1,
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
-  saveButton: {
-    backgroundColor: Colors.light.primary,
+  inputError: {
+    borderWidth: 1,
+    borderColor: '#FC4E68',
   },
-  deleteButton: {
-    backgroundColor: Colors.light.error,
+  errorText: {
+    color: '#FC4E68',
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginLeft: 8,
+  textArea: {
+    height: 100,
+    paddingTop: 12,
   },
 }); 

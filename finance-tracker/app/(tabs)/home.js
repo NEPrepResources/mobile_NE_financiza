@@ -26,6 +26,7 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
   const colorScheme = useColorScheme() ?? 'light';
   const colors = Colors[colorScheme];
 
@@ -48,7 +49,13 @@ export default function HomeScreen() {
       console.error('Error fetching expenses:', err);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    fetchExpenses();
   };
 
   const handleDeleteExpense = async (id) => {
@@ -69,6 +76,7 @@ export default function HomeScreen() {
                 throw new Error('Failed to delete expense');
               }
               setExpenses(expenses.filter((expense) => expense.id !== id));
+              Alert.alert('Success', 'Expense deleted successfully');
             } catch (err) {
               Alert.alert('Error', 'Failed to delete expense. Please try again.');
               console.error('Error deleting expense:', err);
@@ -79,20 +87,48 @@ export default function HomeScreen() {
     );
   };
 
-  const filteredExpenses = expenses.filter((expense) =>
-    expense.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    expense.description?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const showExpenseDetails = (expense) => {
+    Alert.alert(
+      'Expense Details',
+      `Title: ${expense.title}\n` +
+      `Amount: $${parseFloat(expense.amount).toFixed(2)}\n` +
+      `Description: ${expense.description || 'No description'}\n` +
+      `Date: ${formatDate(expense.createdAt)}`,
+      [
+        { text: 'Close', style: 'cancel' },
+        {
+          text: 'Edit',
+          onPress: () => router.push(`/expense-details/${expense.id}`),
+        },
+      ]
+    );
+  };
+
+  const filteredExpenses = expenses.filter((expense) => {
+    const searchLower = searchQuery.toLowerCase();
+    return (
+      expense.title?.toLowerCase().includes(searchLower) ||
+      expense.description?.toLowerCase().includes(searchLower) ||
+      parseFloat(expense.amount).toFixed(2).includes(searchQuery)
+    );
+  });
 
   const formatDate = (dateString) => {
     try {
-      return new Date(dateString).toLocaleDateString();
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
     } catch (err) {
       return 'Invalid date';
     }
   };
 
-  if (loading) {
+  if (loading && !refreshing) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color={colors.primary} />
@@ -107,7 +143,7 @@ export default function HomeScreen() {
         <Text style={styles.title}>Financiza</Text>
         <TouchableOpacity
           style={styles.refreshButton}
-          onPress={fetchExpenses}
+          onPress={handleRefresh}
         >
           <Ionicons name="refresh" size={24} color="#fff" />
         </TouchableOpacity>
@@ -117,11 +153,19 @@ export default function HomeScreen() {
         <Ionicons name="search" size={20} color={colors.textLight} style={styles.searchIcon} />
         <TextInput
           style={[styles.searchInput, { color: colors.text }]}
-          placeholder="Search expenses..."
+          placeholder="Search by title, description, or amount..."
           placeholderTextColor={colors.textLight}
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
+        {searchQuery ? (
+          <TouchableOpacity
+            style={styles.clearButton}
+            onPress={() => setSearchQuery('')}
+          >
+            <Ionicons name="close-circle" size={20} color={colors.textLight} />
+          </TouchableOpacity>
+        ) : null}
       </View>
 
       {error ? (
@@ -139,10 +183,12 @@ export default function HomeScreen() {
           data={filteredExpenses}
           keyExtractor={(item) => item.id.toString()}
           contentContainerStyle={styles.listContainer}
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
           renderItem={({ item }) => (
             <TouchableOpacity
               style={[styles.expenseItem, { backgroundColor: colors.card }]}
-              onPress={() => router.push(`/expense-details/${item.id}`)}
+              onPress={() => showExpenseDetails(item)}
             >
               <View style={styles.expenseContent}>
                 <View style={styles.expenseHeader}>
@@ -154,7 +200,7 @@ export default function HomeScreen() {
                   </Text>
                 </View>
                 <Text style={[styles.expenseDescription, { color: colors.textLight }]} numberOfLines={2}>
-                  {item.description}
+                  {item.description || 'No description'}
                 </Text>
                 <View style={[styles.expenseFooter, { borderTopColor: colors.border }]}>
                   <Text style={[styles.expenseDate, { color: colors.textLight }]}>
@@ -275,8 +321,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     height: '100%',
   },
+  clearButton: {
+    padding: 5,
+  },
   listContainer: {
     padding: 15,
+    flexGrow: 1,
   },
   expenseItem: {
     borderRadius: 15,
