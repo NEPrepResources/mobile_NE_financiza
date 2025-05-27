@@ -1,26 +1,30 @@
+import { useColorScheme } from '@/hooks/useColorScheme';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
   ActivityIndicator,
+  Alert,
+  Image,
   ImageBackground,
   KeyboardAvoidingView,
   Platform,
   StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import { userService } from '../src/services/api';
-import { Ionicons } from '@expo/vector-icons';
+import { Colors } from '../constants/Colors';
 
 export default function LoginScreen() {
   const router = useRouter();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const colorScheme = useColorScheme() ?? 'light';
+  const colors = Colors[colorScheme];
 
   const handleLogin = async () => {
     if (!username || !password) {
@@ -30,23 +34,21 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
-      const user = await userService.login(username);
-      if (user) {
-        router.replace('/home');
-      } else {
-        Alert.alert('Error', 'Invalid credentials');
-      }
+      // Simulated login - replace with actual authentication
+      setTimeout(() => {
+        router.replace('/(tabs)/home');
+      }, 1500);
     } catch (error) {
       Alert.alert('Error', error.message);
-    } finally {
       setLoading(false);
     }
   };
 
   return (
     <ImageBackground
-      source={require('../assets/images/background.jpg')}
+      source={{ uri: 'https://images.pexels.com/photos/4386442/pexels-photo-4386442.jpeg' }}
       style={styles.background}
+      blurRadius={5}
     >
       <StatusBar barStyle="light-content" />
       <KeyboardAvoidingView
@@ -55,38 +57,48 @@ export default function LoginScreen() {
       >
         <View style={styles.overlay}>
           <View style={styles.logoContainer}>
-            <Ionicons name="wallet" size={60} color="#6C63FF" />
-            <Text style={styles.title}>Finance Tracker</Text>
-            <Text style={styles.subtitle}>Welcome back!</Text>
+            <Image
+              source={{ uri: 'https://images.pexels.com/photos/4386442/pexels-photo-4386442.jpeg' }}
+              style={styles.logo}
+              resizeMode="cover"
+            />
+            <Text style={styles.title}>Financiza</Text>
+            <Text style={styles.subtitle}>Manage your expenses with ease</Text>
           </View>
 
-          <View style={styles.formContainer}>
-            <View style={styles.inputContainer}>
-              <Ionicons name="person-outline" size={20} color="#6C63FF" />
+          <View style={[styles.formContainer, { backgroundColor: colors.card }]}>
+            <View style={[styles.inputContainer, { backgroundColor: colors.background }]}>
+              <Ionicons name="person-outline" size={20} color={colors.primary} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: colors.text }]}
                 placeholder="Username"
-                placeholderTextColor="#666"
+                placeholderTextColor={colors.textLight}
                 value={username}
                 onChangeText={setUsername}
                 autoCapitalize="none"
+                editable={!loading}
               />
             </View>
 
-            <View style={styles.inputContainer}>
-              <Ionicons name="lock-closed-outline" size={20} color="#6C63FF" />
+            <View style={[styles.inputContainer, { backgroundColor: colors.background }]}>
+              <Ionicons name="lock-closed-outline" size={20} color={colors.primary} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: colors.text }]}
                 placeholder="Password"
-                placeholderTextColor="#666"
+                placeholderTextColor={colors.textLight}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
+                editable={!loading}
               />
             </View>
 
             <TouchableOpacity
-              style={[styles.loginButton, loading && styles.loginButtonDisabled]}
+              style={[
+                styles.loginButton,
+                { backgroundColor: colors.primary },
+                loading && { opacity: 0.7 },
+              ]}
               onPress={handleLogin}
               disabled={loading}
             >
@@ -98,6 +110,12 @@ export default function LoginScreen() {
                   <Ionicons name="arrow-forward" size={20} color="#fff" />
                 </>
               )}
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.forgotPassword}>
+              <Text style={[styles.forgotPasswordText, { color: colors.primary }]}>
+                Forgot Password?
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -117,13 +135,20 @@ const styles = StyleSheet.create({
   },
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
     padding: 20,
     justifyContent: 'center',
   },
   logoContainer: {
     alignItems: 'center',
     marginBottom: 40,
+  },
+  logo: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 3,
+    borderColor: '#fff',
   },
   title: {
     fontSize: 32,
@@ -138,10 +163,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#fff',
     marginTop: 10,
-    opacity: 0.8,
+    opacity: 0.9,
   },
   formContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderRadius: 20,
     padding: 20,
     shadowColor: '#000',
@@ -156,7 +180,6 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
     borderRadius: 12,
     marginBottom: 15,
     paddingHorizontal: 15,
@@ -174,17 +197,15 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 10,
     fontSize: 16,
-    color: '#333',
   },
   loginButton: {
-    backgroundColor: '#6C63FF',
     borderRadius: 12,
     height: 50,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 10,
-    shadowColor: '#6C63FF',
+    shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 4,
@@ -193,13 +214,18 @@ const styles = StyleSheet.create({
     shadowRadius: 4.65,
     elevation: 8,
   },
-  loginButtonDisabled: {
-    backgroundColor: '#9E99FF',
-  },
   loginButtonText: {
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
     marginRight: 10,
+  },
+  forgotPassword: {
+    alignItems: 'center',
+    marginTop: 15,
+  },
+  forgotPasswordText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
 }); 

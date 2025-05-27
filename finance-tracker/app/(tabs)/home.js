@@ -12,12 +12,10 @@ import {
     StyleSheet,
     Text,
     TextInput,
-    ToastAndroid,
     TouchableOpacity,
     View,
 } from 'react-native';
-import { Colors } from '../constants/Colors';
-import { expenseService } from '../src/services/api';
+import { Colors } from '../../constants/Colors';
 
 const { width } = Dimensions.get('window');
 
@@ -29,49 +27,40 @@ export default function HomeScreen() {
   const colorScheme = useColorScheme() ?? 'light';
   const colors = Colors[colorScheme];
 
-  const fetchExpenses = async () => {
-    try {
-      const data = await expenseService.getAllExpenses();
-      setExpenses(data);
-    } catch (error) {
-      Alert.alert('Error', error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchExpenses();
+    // Simulated data loading
+    setTimeout(() => {
+      setExpenses([
+        {
+          id: '1',
+          title: 'Groceries',
+          amount: '150.00',
+          description: 'Weekly groceries shopping',
+          date: new Date().toISOString(),
+        },
+        {
+          id: '2',
+          title: 'Internet Bill',
+          amount: '60.00',
+          description: 'Monthly internet subscription',
+          date: new Date().toISOString(),
+        },
+      ]);
+      setLoading(false);
+    }, 1000);
   }, []);
 
-  const showToast = (message) => {
-    if (Platform.OS === 'android') {
-      ToastAndroid.show(message, ToastAndroid.SHORT);
-    } else {
-      Alert.alert('Success', message);
-    }
-  };
-
-  const handleDeleteExpense = async (id) => {
+  const handleDeleteExpense = (id) => {
     Alert.alert(
       'Delete Expense',
       'Are you sure you want to delete this expense?',
       [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
+        { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: async () => {
-            try {
-              await expenseService.deleteExpense(id);
-              setExpenses(expenses.filter(expense => expense.id !== id));
-              showToast('Expense deleted successfully');
-            } catch (error) {
-              Alert.alert('Error', error.message);
-            }
+          onPress: () => {
+            setExpenses(expenses.filter((expense) => expense.id !== id));
           },
         },
       ]
@@ -79,42 +68,8 @@ export default function HomeScreen() {
   };
 
   const filteredExpenses = expenses.filter((expense) =>
-    expense.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    expense.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     expense.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const renderExpenseItem = ({ item }) => (
-    <TouchableOpacity
-      style={[styles.expenseItem, { backgroundColor: colors.card }]}
-      onPress={() => router.push(`/expense-details?id=${item.id}`)}
-    >
-      <View style={styles.expenseContent}>
-        <View style={styles.expenseHeader}>
-          <Text style={[styles.expenseTitle, { color: colors.text }]} numberOfLines={1}>
-            {item.name}
-          </Text>
-          <Text style={[styles.expenseAmount, { color: colors.primary }]}>
-            ${item.amount}
-          </Text>
-        </View>
-        
-        <Text style={[styles.expenseDescription, { color: colors.textLight }]} numberOfLines={2}>
-          {item.description}
-        </Text>
-        
-        <View style={[styles.expenseFooter, { borderTopColor: colors.border }]}>
-          <Text style={[styles.expenseDate, { color: colors.textLight }]}>
-            {new Date(item.createdAt).toLocaleDateString()}
-          </Text>
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={() => handleDeleteExpense(item.id)}
-          >
-            <Ionicons name="trash-outline" size={20} color={colors.error} />
-          </TouchableOpacity>
-        </View>
-      </View>
-    </TouchableOpacity>
   );
 
   if (loading) {
@@ -129,7 +84,7 @@ export default function HomeScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar barStyle="light-content" />
       <View style={[styles.header, { backgroundColor: colors.primary }]}>
-        <Text style={styles.title}>Finance Tracker</Text>
+        <Text style={styles.title}>Financiza</Text>
         <TouchableOpacity
           style={styles.addButton}
           onPress={() => router.push('/expense-details')}
@@ -138,7 +93,7 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.searchContainer}>
+      <View style={[styles.searchContainer, { backgroundColor: colors.card }]}>
         <Ionicons name="search" size={20} color={colors.textLight} style={styles.searchIcon} />
         <TextInput
           style={[styles.searchInput, { color: colors.text }]}
@@ -151,9 +106,39 @@ export default function HomeScreen() {
 
       <FlatList
         data={filteredExpenses}
-        renderItem={renderExpenseItem}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContainer}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={[styles.expenseItem, { backgroundColor: colors.card }]}
+            onPress={() => router.push(`/expense-details/${item.id}`)}
+          >
+            <View style={styles.expenseContent}>
+              <View style={styles.expenseHeader}>
+                <Text style={[styles.expenseTitle, { color: colors.text }]} numberOfLines={1}>
+                  {item.title}
+                </Text>
+                <Text style={[styles.expenseAmount, { color: colors.primary }]}>
+                  ${item.amount}
+                </Text>
+              </View>
+              <Text style={[styles.expenseDescription, { color: colors.textLight }]} numberOfLines={2}>
+                {item.description}
+              </Text>
+              <View style={[styles.expenseFooter, { borderTopColor: colors.border }]}>
+                <Text style={[styles.expenseDate, { color: colors.textLight }]}>
+                  {new Date(item.date).toLocaleDateString()}
+                </Text>
+                <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={() => handleDeleteExpense(item.id)}
+                >
+                  <Ionicons name="trash-outline" size={20} color={colors.error} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </TouchableOpacity>
+        )}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Text style={[styles.emptyText, { color: colors.textLight }]}>
@@ -216,7 +201,6 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     paddingHorizontal: 15,
     height: 40,
-    backgroundColor: '#fff',
     borderRadius: 20,
     shadowColor: '#000',
     shadowOffset: {
