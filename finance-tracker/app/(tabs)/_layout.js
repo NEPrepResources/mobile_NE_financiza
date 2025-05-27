@@ -1,6 +1,6 @@
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Ionicons } from '@expo/vector-icons';
-import { Tabs, useRouter } from 'expo-router';
+import { Tabs, usePathname, useRouter } from 'expo-router';
 import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
 
@@ -8,6 +8,10 @@ export default function TabLayout() {
   const colorScheme = useColorScheme() ?? 'light';
   const colors = Colors[colorScheme];
   const router = useRouter();
+  const pathname = usePathname();
+
+  // Hide add button on profile screen
+  const showAddButton = !pathname?.includes('/profile');
 
   return (
     <View style={styles.container}>
@@ -69,18 +73,20 @@ export default function TabLayout() {
           }}
         />
       </Tabs>
-      <TouchableOpacity
-        onPress={() => router.push('/expense-details')}
-        style={[styles.addButton, { backgroundColor: colors.primary }]}
-      >
-        <View style={styles.addButtonInner}>
-          <Ionicons 
-            name="add" 
-            size={32} 
-            color="#fff"
-          />
-        </View>
-      </TouchableOpacity>
+      {showAddButton && (
+        <TouchableOpacity
+          onPress={() => router.push('/expense-details')}
+          style={[styles.addButton, { backgroundColor: colors.primary }]}
+        >
+          <View style={styles.addButtonInner}>
+            <Ionicons 
+              name="add" 
+              size={32} 
+              color="#fff"
+            />
+          </View>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
