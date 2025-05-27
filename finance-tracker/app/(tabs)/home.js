@@ -3,18 +3,18 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Dimensions,
-    FlatList,
-    Platform,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  FlatList,
+  Platform,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { Colors } from '../../constants/Colors';
 
@@ -226,8 +226,7 @@ export default function HomeScreen() {
 
       {/* Stats Cards */}
       <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
+        showsVerticalScrollIndicator={false}
         style={styles.statsContainer}
         contentContainerStyle={styles.statsContent}
       >
@@ -552,16 +551,17 @@ const styles = StyleSheet.create({
   },
   statsContainer: {
     marginTop: 20,
-    maxHeight: 200,
+    maxHeight: 400,
   },
   statsContent: {
-    paddingHorizontal: 15,
+    paddingHorizontal: 20,
+    paddingBottom: 10,
   },
   statsCard: {
-    width: width - 50,
-    marginHorizontal: 5,
+    width: '100%',
+    marginBottom: 15,
     borderRadius: 15,
-    padding: 15,
+    padding: 20,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
