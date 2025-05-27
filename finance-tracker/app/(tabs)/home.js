@@ -552,6 +552,7 @@ const styles = StyleSheet.create({
   statsContainer: {
     marginTop: 20,
     maxHeight: 400,
+    paddingBottom: 20,
   },
   statsContent: {
     paddingHorizontal: 20,
